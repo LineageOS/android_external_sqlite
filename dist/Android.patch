@@ -1,6 +1,6 @@
 diff -r -u -d orig/shell.c ./shell.c
---- orig/shell.c	2015-06-12 15:32:23.260341869 -0700
-+++ ./shell.c	2015-06-12 15:33:39.024707940 -0700
+--- orig/shell.c	2017-01-17 00:04:33.519811464 +0100
++++ ./shell.c	2017-01-17 00:04:33.616478134 +0100
 @@ -52,6 +52,12 @@
  #endif
  #include <ctype.h>
@@ -38,9 +38,9 @@ diff -r -u -d orig/shell.c ./shell.c
  }
  
 diff -r -u -d orig/sqlite3.c ./sqlite3.c
---- orig/sqlite3.c	2015-06-12 15:32:23.828344614 -0700
-+++ ./sqlite3.c	2015-06-12 15:33:39.048708056 -0700
-@@ -25292,6 +25292,13 @@
+--- orig/sqlite3.c	2017-09-14 18:29:19.047563334 +0200
++++ ./sqlite3.c	2017-09-14 18:29:30.100896538 +0200
+@@ -25296,6 +25296,13 @@
  */
  #if SQLITE_OS_UNIX              /* This file is used on unix only */
  
@@ -54,7 +54,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
  /*
  ** There are various methods for file locking used for concurrency
  ** control:
-@@ -25846,7 +25853,12 @@
+@@ -25850,7 +25857,12 @@
  #else
    { "pread64",      (sqlite3_syscall_ptr)0,          0  },
  #endif
@@ -67,7 +67,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
  
    { "write",        (sqlite3_syscall_ptr)write,      0  },
  #define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
-@@ -25864,8 +25876,14 @@
+@@ -25868,8 +25880,14 @@
  #else
    { "pwrite64",     (sqlite3_syscall_ptr)0,          0  },
  #endif
@@ -82,7 +82,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
  
    { "fchmod",       (sqlite3_syscall_ptr)fchmod,     0  },
  #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
-@@ -29115,7 +29133,7 @@
+@@ -29119,7 +29137,7 @@
    SimulateIOError( rc=1 );
    if( rc!=0 ){
      storeLastErrno((unixFile*)id, errno);
@@ -91,7 +91,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
    }
    *pSize = buf.st_size;
  
-@@ -29151,7 +29169,7 @@
+@@ -29155,7 +29173,7 @@
      struct stat buf;              /* Used to hold return values of fstat() */
     
      if( osFstat(pFile->h, &buf) ){
@@ -100,7 +100,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
      }
  
      nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
-@@ -29736,7 +29754,7 @@
+@@ -29740,7 +29758,7 @@
      ** with the same permissions.
      */
      if( osFstat(pDbFd->h, &sStat) && pInode->bProcessLock==0 ){
@@ -109,7 +109,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
        goto shm_open_err;
      }
  
-@@ -31082,7 +31100,7 @@
+@@ -31086,7 +31104,7 @@
        *pUid = sStat.st_uid;
        *pGid = sStat.st_gid;
      }else{
@@ -118,7 +118,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
      }
    }else if( flags & SQLITE_OPEN_DELETEONCLOSE ){
      *pMode = 0600;
-@@ -105877,7 +105895,7 @@
+@@ -105893,7 +105911,7 @@
    }
    if( pDb->pSchema->file_format>SQLITE_MAX_FILE_FORMAT ){
      sqlite3SetString(pzErrMsg, db, "unsupported file format");
@@ -127,7 +127,7 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
      goto initone_error_out;
    }
  
-@@ -130850,9 +130868,9 @@
+@@ -130866,9 +130884,9 @@
  #endif
  
  #ifdef SQLITE_ENABLE_FTS3
@@ -140,7 +140,284 @@ diff -r -u -d orig/sqlite3.c ./sqlite3.c
  #endif
  
  #ifdef SQLITE_ENABLE_ICU
-@@ -136910,16 +136928,28 @@
+@@ -136923,16 +136941,28 @@
+   ** module with sqlite.
+   */
+   if( SQLITE_OK==rc 
++#ifndef ANDROID    /* fts3_tokenizer disabled for security reasons */
+    && SQLITE_OK==(rc = sqlite3Fts3InitHashTable(db, pHash, "fts3_tokenizer"))
++#endif
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", 1))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 1))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 2))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", 1))
+   ){
++#ifdef SQLITE_ENABLE_FTS3_BACKWARDS
++    rc = sqlite3_create_module_v2(
++        db, "fts1", &fts3Module, (void *)pHash, 0
++        );
++    if(rc) return rc;
++    rc = sqlite3_create_module_v2(
++        db, "fts2", &fts3Module, (void *)pHash, 0
++        );
++    if(rc) return rc;
++#endif
+     rc = sqlite3_create_module_v2(
+         db, "fts3", &fts3Module, (void *)pHash, hashDestroy
+-    );
++        );
+     if( rc==SQLITE_OK ){
+       rc = sqlite3_create_module_v2(
+           db, "fts4", &fts3Module, (void *)pHash, 0
+diff -r -u -d orig/sqlite3.c.orig ./sqlite3.c.orig
+--- orig/sqlite3.c.orig	2017-09-14 18:13:42.947574215 +0200
++++ ./sqlite3.c.orig	2017-09-14 18:13:42.237574225 +0200
+@@ -25364,6 +25364,13 @@
+ */
+ #if SQLITE_OS_UNIX              /* This file is used on unix only */
+ 
++/* Use posix_fallocate() if it is available
++*/
++#if !defined(HAVE_POSIX_FALLOCATE) \
++      && (_XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L)
++# define HAVE_POSIX_FALLOCATE 1
++#endif
++
+ /*
+ ** There are various methods for file locking used for concurrency
+ ** control:
+@@ -25918,7 +25925,12 @@
+ #else
+   { "pread64",      (sqlite3_syscall_ptr)0,          0  },
+ #endif
++#ifdef ANDROID
++// Bionic defines pread64 using off64_t rather than off_t.
++#define osPread64   ((ssize_t(*)(int,void*,size_t,off64_t))aSyscall[10].pCurrent)
++#else
+ #define osPread64   ((ssize_t(*)(int,void*,size_t,off_t))aSyscall[10].pCurrent)
++#endif
+ 
+   { "write",        (sqlite3_syscall_ptr)write,      0  },
+ #define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
+@@ -25936,8 +25948,14 @@
+ #else
+   { "pwrite64",     (sqlite3_syscall_ptr)0,          0  },
+ #endif
++#ifdef ANDROID
++// Bionic defines pwrite64 using off64_t rather than off_t.
++#define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off64_t))\
++                    aSyscall[13].pCurrent)
++#else
+ #define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
+                     aSyscall[13].pCurrent)
++#endif
+ 
+   { "fchmod",       (sqlite3_syscall_ptr)fchmod,     0  },
+ #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
+@@ -29187,7 +29205,7 @@
+   SimulateIOError( rc=1 );
+   if( rc!=0 ){
+     storeLastErrno((unixFile*)id, errno);
+-    return SQLITE_IOERR_FSTAT;
++    return unixLogError(SQLITE_IOERR_FSTAT, "fstat", ((unixFile*)id)->zPath);
+   }
+   *pSize = buf.st_size;
+ 
+@@ -29223,7 +29241,7 @@
+     struct stat buf;              /* Used to hold return values of fstat() */
+    
+     if( osFstat(pFile->h, &buf) ){
+-      return SQLITE_IOERR_FSTAT;
++      return unixLogError(SQLITE_IOERR_FSTAT, "fstat", pFile->zPath);
+     }
+ 
+     nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
+@@ -29808,7 +29826,7 @@
+     ** with the same permissions.
+     */
+     if( osFstat(pDbFd->h, &sStat) && pInode->bProcessLock==0 ){
+-      rc = SQLITE_IOERR_FSTAT;
++      rc = unixLogError(SQLITE_IOERR_FSTAT, "fstat", pDbFd->zPath);
+       goto shm_open_err;
+     }
+ 
+@@ -31154,7 +31172,7 @@
+       *pUid = sStat.st_uid;
+       *pGid = sStat.st_gid;
+     }else{
+-      rc = SQLITE_IOERR_FSTAT;
++      rc = unixLogError(SQLITE_IOERR_FSTAT, "stat", zDb);
+     }
+   }else if( flags & SQLITE_OPEN_DELETEONCLOSE ){
+     *pMode = 0600;
+@@ -105973,7 +105991,7 @@
+   }
+   if( pDb->pSchema->file_format>SQLITE_MAX_FILE_FORMAT ){
+     sqlite3SetString(pzErrMsg, db, "unsupported file format");
+-    rc = SQLITE_ERROR;
++    rc = SQLITE_CORRUPT_BKPT; // Android Change from "rc = SQLITE_ERROR;"
+     goto initone_error_out;
+   }
+ 
+@@ -138558,13 +138576,25 @@
+   ** module with sqlite.
+   */
+   if( SQLITE_OK==rc 
++#ifndef ANDROID    /* fts3_tokenizer disabled for security reasons */
+    && SQLITE_OK==(rc = sqlite3Fts3InitHashTable(db, pHash, "fts3_tokenizer"))
++#endif
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", 1))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 1))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", 2))
+    && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", 1))
+   ){
++#ifdef SQLITE_ENABLE_FTS3_BACKWARDS
++    rc = sqlite3_create_module_v2(
++        db, "fts1", &fts3Module, (void *)pHash, 0
++        );
++    if(rc) return rc;
++    rc = sqlite3_create_module_v2(
++        db, "fts2", &fts3Module, (void *)pHash, 0
++        );
++    if(rc) return rc;
++#endif
+     rc = sqlite3_create_module_v2(
+         db, "fts3", &fts3Module, (void *)pHash, hashDestroy
+     );
+@@ -145099,6 +145129,117 @@
+     int nParam = sqlite3_bind_parameter_count(pStmt);
+     for(i=0; rc==SQLITE_OK && i<nParam; i++){
+       rc = sqlite3_bind_value(pStmt, i+1, apVal[i]);
++    }
++  }
++  *pp = pStmt;
++  return rc;
++}
++
++
++static int fts3SelectDocsize(
++  Fts3Table *pTab,                /* FTS3 table handle */
++  sqlite3_int64 iDocid,           /* Docid to bind for SQL_SELECT_DOCSIZE */
++  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
++){
++  sqlite3_stmt *pStmt = 0;        /* Statement requested from fts3SqlStmt() */
++  int rc;                         /* Return code */
++
++  rc = fts3SqlStmt(pTab, SQL_SELECT_DOCSIZE, &pStmt, 0);
++  if( rc==SQLITE_OK ){
++    sqlite3_bind_int64(pStmt, 1, iDocid);
++    rc = sqlite3_step(pStmt);
++    if( rc!=SQLITE_ROW || sqlite3_column_type(pStmt, 0)!=SQLITE_BLOB ){
++      rc = sqlite3_reset(pStmt);
++      if( rc==SQLITE_OK ) rc = FTS_CORRUPT_VTAB;
++      pStmt = 0;
++    }else{
++      rc = SQLITE_OK;
++    }
++  }
++
++  *ppStmt = pStmt;
++  return rc;
++}
++
++SQLITE_PRIVATE int sqlite3Fts3SelectDoctotal(
++  Fts3Table *pTab,                /* Fts3 table handle */
++  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
++){
++  sqlite3_stmt *pStmt = 0;
++  int rc;
++  rc = fts3SqlStmt(pTab, SQL_SELECT_STAT, &pStmt, 0);
++  if( rc==SQLITE_OK ){
++    sqlite3_bind_int(pStmt, 1, FTS_STAT_DOCTOTAL);
++    if( sqlite3_step(pStmt)!=SQLITE_ROW
++     || sqlite3_column_type(pStmt, 0)!=SQLITE_BLOB
++    ){
++      rc = sqlite3_reset(pStmt);
++      if( rc==SQLITE_OK ) rc = FTS_CORRUPT_VTAB;
++      pStmt = 0;
++    }
++  }
++  *ppStmt = pStmt;
++  return rc;
++}
++
++SQLITE_PRIVATE int sqlite3Fts3SelectDocsize(
++  Fts3Table *pTab,                /* Fts3 table handle */
++  sqlite3_int64 iDocid,           /* Docid to read size data for */
++  sqlite3_stmt **ppStmt           /* OUT: Statement handle */
++){
++  return fts3SelectDocsize(pTab, iDocid, ppStmt);
++}
++
++/*
++** Similar to fts3SqlStmt(). Except, after binding the parameters in
++** array apVal[] to the SQL statement identified by eStmt, the statement
++** is executed.
++**
++** Returns SQLITE_OK if the statement is successfully executed, or an
++** SQLite error code otherwise.
++*/
++static void fts3SqlExec(
++  int *pRC,                /* Result code */
++  Fts3Table *p,            /* The FTS3 table */
++  int eStmt,               /* Index of statement to evaluate */
++  sqlite3_value **apVal    /* Parameters to bind */
++){
++  sqlite3_stmt *pStmt;
++  int rc;
++  if( *pRC ) return;
++  rc = fts3SqlStmt(p, eStmt, &pStmt, apVal); 
++  if( rc==SQLITE_OK ){
++    sqlite3_step(pStmt);
++    rc = sqlite3_reset(pStmt);
++  }
++  *pRC = rc;
++}
++
++
++/*
++** This function ensures that the caller has obtained an exclusive 
++** shared-cache table-lock on the %_segdir table. This is required before 
++** writing data to the fts3 table. If this lock is not acquired first, then
++** the caller may end up attempting to take this lock as part of committing
++** a transaction, causing SQLite to return SQLITE_LOCKED or 
++** LOCKED_SHAREDCACHEto a COMMIT command.
++**
++** It is best to avoid this because if FTS3 returns any error when 
++** committing a transaction, the whole transaction will be rolled back. 
++** And this is not what users expect when they get SQLITE_LOCKED_SHAREDCACHE. 
++** It can still happen if the user locks the underlying tables directly 
++** instead of accessing them via FTS.
++*/
++static int fts3Writelock(Fts3Table *p){
++  int rc = SQLITE_OK;
++  
++  if( p->nPendingData==0 ){
++    sqlite3_stmt *pStmt;
++    rc = fts3SqlStmt(p, SQL_DELETE_SEGDIR_LEVEL, &pStmt, 0);
++    if( rc==SQLITE_OK ){
++      sqlite3_bind_null(pStmt, 1);
++      sqlite3_step(pStmt);
++      rc = sqlite3_reset(pStmt);
+ >>>>>>> DO NOT MERGE - fix FTS3 column pointer handling
+     }
+     pScan->pWC = pScan->pOrigWC;
+@@ -159275,9 +159416,9 @@
+ #endif
+ 
+ #ifdef SQLITE_ENABLE_FTS3
+-  if( !db->mallocFailed && rc==SQLITE_OK ){
+-    rc = sqlite3Fts3Init(db);
+-  }
++    if( !db->mallocFailed && rc==SQLITE_OK ){
++      rc = sqlite3Fts3Init(db);
++    }
+ #endif
+ 
+ #ifdef SQLITE_ENABLE_ICU
+@@ -165335,16 +165476,28 @@
    ** module with sqlite.
    */
    if( SQLITE_OK==rc 
