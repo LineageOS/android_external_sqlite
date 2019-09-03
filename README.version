@@ -1,4 +1,4 @@
-URL: https://www.sqlite.org/src/info/4cb67252d39fc537
-Version: 3.9.3 4cb67252d39fc537601f75532ec8271994aed8bae4d20ba48a3262b52ed004c0
+URL: https://sqlite.org/src/info/7b4583f932ff0933
+Version: 3.9.3 7b4583f932ff0933280aa73ee69294b488f96d4f2bdc8422cd0136d944d9fb60
 This patch fixes Magellan SQLite Security Vulnerability as in b/121156452
 BugComponent: 24950
