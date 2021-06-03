@@ -10,6 +10,7 @@ libsqlite3_android_c_includes := external/sqlite/dist
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES:= $(libsqlite3_android_local_src_files)
 LOCAL_C_INCLUDES += $(libsqlite3_android_c_includes)
+LOCAL_C_FLAGS += -DSQLITE_PRINTF_PRECISION_LIMIT=100000000
 LOCAL_STATIC_LIBRARIES := liblog
 LOCAL_SHARED_LIBRARIES := libicuuc libicui18n
 LOCAL_MODULE:= libsqlite3_android
@@ -18,6 +19,7 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES:= $(libsqlite3_android_local_src_files)
 LOCAL_C_INCLUDES += $(libsqlite3_android_c_includes)
+LOCAL_C_FLAGS += -DSQLITE_PRINTF_PRECISION_LIMIT=100000000
 LOCAL_STATIC_LIBRARIES := liblog
 LOCAL_SHARED_LIBRARIES := libicuuc-host libicui18n-host
 LOCAL_MODULE:= libsqlite3_android
