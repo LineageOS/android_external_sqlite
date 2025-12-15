@@ -1,6 +1,6 @@
 /******************************************************************************
 ** This file is an amalgamation of many separate C source files from SQLite
-** version 3.44.3.  By combining all the individual C code files into this
+** version 3.44.5.  By combining all the individual C code files into this
 ** single large file, the entire code can be compiled as a single translation
 ** unit.  This allows many compilers to do optimizations that would not be
 ** possible if the files were compiled separately.  Performance improvements
@@ -18,7 +18,7 @@
 ** separate file. This file contains only code for the core SQLite library.
 **
 ** The content in this amalgamation comes from Fossil check-in
-** d68fb8b5dbb8305e00d2dd14d8fe6b3d9f67.
+** a88185782279322fea69eebb4bad1fc9c215.
 */
 #define SQLITE_CORE 1
 #define SQLITE_AMALGAMATION 1
@@ -459,9 +459,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.44.3"
-#define SQLITE_VERSION_NUMBER 3044003
-#define SQLITE_SOURCE_ID      "2024-03-24 21:15:01 d68fb8b5dbb8305e00d2dd14d8fe6b3d9f67e2459102ff160d956a6b75ddc18e"
+#define SQLITE_VERSION        "3.44.5"
+#define SQLITE_VERSION_NUMBER 3044005
+#define SQLITE_SOURCE_ID      "2025-07-24 14:26:41 a88185782279322fea69eebb4bad1fc9c215dc5a7cb2f3d79fcf19f15e90c6ce"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -14929,6 +14929,14 @@ typedef INT16_TYPE LogEst;
 #define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
 
 /*
+** Macro SMXV(n) return the maximum value that can be held in variable n,
+** assuming n is a signed integer type.  UMXV(n) is similar for unsigned
+** integer types.
+*/
+#define SMXV(n) ((((i64)1)<<(sizeof(n)*8-1))-1)
+#define UMXV(n) ((((i64)1)<<(sizeof(n)*8))-1)
+
+/*
 ** Round up a number to the next larger multiple of 8.  This is used
 ** to force 8-byte alignment on 64-bit architectures.
 **
@@ -18709,7 +18717,7 @@ struct AggInfo {
                           ** from source tables rather than from accumulators */
   u8 useSortingIdx;       /* In direct mode, reference the sorting index rather
                           ** than the source table */
-  u16 nSortingColumn;     /* Number of columns in the sorting index */
+  u32 nSortingColumn;     /* Number of columns in the sorting index */
   int sortingIdx;         /* Cursor number of the sorting index */
   int sortingIdxPTab;     /* Cursor number of pseudo-table */
   int iFirstReg;          /* First register in range for aCol[] and aFunc[] */
@@ -18718,8 +18726,8 @@ struct AggInfo {
     Table *pTab;             /* Source table */
     Expr *pCExpr;            /* The original expression */
     int iTable;              /* Cursor number of the source table */
-    i16 iColumn;             /* Column number within the source table */
-    i16 iSorterColumn;       /* Column number in the sorting index */
+    int iColumn;             /* Column number within the source table */
+    int iSorterColumn;       /* Column number in the sorting index */
   } *aCol;
   int nColumn;            /* Number of used entries in aCol[] */
   int nAccumulator;       /* Number of columns that show through to the output.
@@ -79314,7 +79322,7 @@ SQLITE_PRIVATE int sqlite3BtreeInsert(
   }else if( loc<0 && pPage->nCell>0 ){
     assert( pPage->leaf );
     idx = ++pCur->ix;
-    pCur->curFlags &= ~BTCF_ValidNKey;
+    pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
   }else{
     assert( pPage->leaf );
   }
@@ -79344,7 +79352,7 @@ SQLITE_PRIVATE int sqlite3BtreeInsert(
   */
   if( pPage->nOverflow ){
     assert( rc==SQLITE_OK );
-    pCur->curFlags &= ~(BTCF_ValidNKey);
+    pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
     rc = balance(pCur);
 
     /* Must make sure nOverflow is reset to zero even if the balance()
@@ -114711,7 +114719,9 @@ static void findOrCreateAggInfoColumn(
 ){
   struct AggInfo_col *pCol;
   int k;
+  int mxTerm = pParse->db->aLimit[SQLITE_LIMIT_COLUMN];
 
+  assert( mxTerm <= SMXV(i16) );
   assert( pAggInfo->iFirstReg==0 );
   pCol = pAggInfo->aCol;
   for(k=0; k<pAggInfo->nColumn; k++, pCol++){
@@ -114728,6 +114738,10 @@ static void findOrCreateAggInfoColumn(
     /* OOM on resize */
     assert( pParse->db->mallocFailed );
     return;
+  }
+  if( k>mxTerm ){
+    sqlite3ErrorMsg(pParse, "more than %d aggregate terms", mxTerm);
+    k = mxTerm;
   }
   pCol = &pAggInfo->aCol[k];
   assert( ExprUseYTab(pExpr) );
@@ -114762,6 +114776,7 @@ fix_up_expr:
   if( pExpr->op==TK_COLUMN ){
     pExpr->op = TK_AGG_COLUMN;
   }
+  assert( k <= SMXV(pExpr->iAgg) );
   pExpr->iAgg = (i16)k;
 }
 
@@ -114845,13 +114860,19 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         ** function that is already in the pAggInfo structure
         */
         struct AggInfo_func *pItem = pAggInfo->aFunc;
+        int mxTerm = pParse->db->aLimit[SQLITE_LIMIT_COLUMN];
+        assert( mxTerm <= SMXV(i16) );
         for(i=0; i<pAggInfo->nFunc; i++, pItem++){
           if( pItem->pFExpr==pExpr ) break;
           if( sqlite3ExprCompare(0, pItem->pFExpr, pExpr, -1)==0 ){
             break;
           }
         }
-        if( i>=pAggInfo->nFunc ){
+        if( i>mxTerm ){
+          sqlite3ErrorMsg(pParse, "more than %d aggregate terms", mxTerm);
+          i = mxTerm;
+          assert( i<pAggInfo->nFunc );
+        }else if( i>=pAggInfo->nFunc ){
           /* pExpr is original.  Make a new entry in pAggInfo->aFunc[]
           */
           u8 enc = ENC(pParse->db);
@@ -114903,6 +114924,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         */
         assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
         ExprSetVVAProperty(pExpr, EP_NoReduce);
+        assert( i <= SMXV(pExpr->iAgg) );
         pExpr->iAgg = (i16)i;
         pExpr->pAggInfo = pAggInfo;
         return WRC_Prune;
@@ -129118,7 +129140,7 @@ static void concatFuncCore(
   for(i=0; i<argc; i++){
     n += sqlite3_value_bytes(argv[i]);
   }
-  n += (argc-1)*nSep;
+  n += (argc-1)*(i64)nSep;
   z = sqlite3_malloc64(n+1);
   if( z==0 ){
     sqlite3_result_error_nomem(context);
@@ -134769,7 +134791,10 @@ static int xferOptimization(
     }
   }
 #ifndef SQLITE_OMIT_CHECK
-  if( pDest->pCheck && sqlite3ExprListCompare(pSrc->pCheck,pDest->pCheck,-1) ){
+  if( pDest->pCheck
+   && (db->mDbFlags & DBFLAG_Vacuum)==0
+   && sqlite3ExprListCompare(pSrc->pCheck,pDest->pCheck,-1)
+  ){
     return 0;   /* Tables have different CHECK constraints.  Ticket #2252 */
   }
 #endif
@@ -152632,6 +152657,9 @@ SQLITE_PRIVATE void sqlite3Update(
       }
     }
     if( chngRowid==0 && pPk==0 ){
+#ifdef SQLITE_ALLOW_ROWID_IN_VIEW
+      if( isView ) sqlite3VdbeAddOp2(v, OP_Null, 0, regOldRowid);
+#endif
       sqlite3VdbeAddOp2(v, OP_Copy, regOldRowid, regNewRowid);
     }
   }
@@ -166288,16 +166316,10 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
   for(i=0; i<pIdx->nColumn; i++){
     Expr *pExpr;
     int j = pIdx->aiColumn[i];
-    int bMaybeNullRow;
     if( j==XN_EXPR ){
       pExpr = pIdx->aColExpr->a[i].pExpr;
-      testcase( pTabItem->fg.jointype & JT_LEFT );
-      testcase( pTabItem->fg.jointype & JT_RIGHT );
-      testcase( pTabItem->fg.jointype & JT_LTORJ );
-      bMaybeNullRow = (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0;
     }else if( j>=0 && (pTab->aCol[j].colFlags & COLFLAG_VIRTUAL)!=0 ){
       pExpr = sqlite3ColumnExpr(pTab, &pTab->aCol[j]);
-      bMaybeNullRow = 0;
     }else{
       continue;
     }
@@ -166329,7 +166351,7 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     p->iDataCur = pTabItem->iCursor;
     p->iIdxCur = iIdxCur;
     p->iIdxCol = i;
-    p->bMaybeNullRow = bMaybeNullRow;
+    p->bMaybeNullRow = (pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT))!=0;
     if( sqlite3IndexAffinityStr(pParse->db, pIdx) ){
       p->aff = pIdx->zColAff[i];
     }
@@ -178561,7 +178583,7 @@ SQLITE_API int sqlite3_config(int op, ...){
 static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
 #ifndef SQLITE_OMIT_LOOKASIDE
   void *pStart;
-  sqlite3_int64 szAlloc = sz*(sqlite3_int64)cnt;
+  sqlite3_int64 szAlloc;
   int nBig;   /* Number of full-size slots */
   int nSm;    /* Number smaller LOOKASIDE_SMALL-byte slots */
 
@@ -178580,7 +178602,9 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   */
   sz = ROUNDDOWN8(sz);  /* IMP: R-33038-09382 */
   if( sz<=(int)sizeof(LookasideSlot*) ) sz = 0;
+  if( sz>65528 ) sz = 65528;
   if( cnt<0 ) cnt = 0;
+  szAlloc = (i64)sz*(i64)cnt;
   if( sz==0 || cnt==0 ){
     sz = 0;
     pStart = 0;
@@ -178595,10 +178619,10 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
 #ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
   if( sz>=LOOKASIDE_SMALL*3 ){
     nBig = szAlloc/(3*LOOKASIDE_SMALL+sz);
-    nSm = (szAlloc - sz*nBig)/LOOKASIDE_SMALL;
+    nSm = (szAlloc - (i64)sz*(i64)nBig)/LOOKASIDE_SMALL;
   }else if( sz>=LOOKASIDE_SMALL*2 ){
     nBig = szAlloc/(LOOKASIDE_SMALL+sz);
-    nSm = (szAlloc - sz*nBig)/LOOKASIDE_SMALL;
+    nSm = (szAlloc - (i64)sz*(i64)nBig)/LOOKASIDE_SMALL;
   }else
 #endif /* SQLITE_OMIT_TWOSIZE_LOOKASIDE */
   if( sz>0 ){
@@ -247828,7 +247852,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2024-03-24 21:15:01 d68fb8b5dbb8305e00d2dd14d8fe6b3d9f67e2459102ff160d956a6b75ddc18e", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2025-07-24 14:26:41 a88185782279322fea69eebb4bad1fc9c215dc5a7cb2f3d79fcf19f15e90c6ce", -1, SQLITE_TRANSIENT);
 }
 
 /*
