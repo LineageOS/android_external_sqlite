@@ -16,6 +16,24 @@
       "message": "@johnsonnolen@gmail.com source of this?",
       "revId": "b205ee66df1b6f44d8d99745d18f65cd78fa37ee",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2522d227_73e1fa92",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 28223
+      },
+      "writtenOn": "2026-06-03T08:16:35Z",
+      "side": 1,
+      "message": "in a galaxy far far away where Google actually drops the source for the patches referenced in the bulletin",
+      "parentUuid": "ba014da8_d4a23fb7",
+      "revId": "b205ee66df1b6f44d8d99745d18f65cd78fa37ee",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
