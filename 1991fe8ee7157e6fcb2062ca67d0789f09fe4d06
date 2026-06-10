@@ -87,6 +87,23 @@
       "parentUuid": "fcaf9cdc_70a0fa95",
       "revId": "1991fe8ee7157e6fcb2062ca67d0789f09fe4d06",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "151ecc2b_b8f1f9b4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 18796
+      },
+      "writtenOn": "2026-06-10T09:23:20Z",
+      "side": 1,
+      "message": "@mse1969@posteo.de Can we revert this for now and apply a proper fix after your investigation?",
+      "revId": "1991fe8ee7157e6fcb2062ca67d0789f09fe4d06",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
