@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0e77f3dd_4947086b",
+        "filename": "dist/Android.bp",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 11883
+      },
+      "writtenOn": "2026-06-10T09:42:57Z",
+      "side": 1,
+      "message": "I think all you need is this, since the noicu libs are extra targets that we don\u0027t depend on?",
+      "revId": "b75e3076a15ac0eca5a941d1308d4ec800cf0b59",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
