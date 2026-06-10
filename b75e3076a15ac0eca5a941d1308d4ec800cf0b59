@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a86a1113_3e02b4ab",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 13028
+      },
+      "writtenOn": "2026-06-10T09:45:54Z",
+      "side": 1,
+      "message": "lowercase fixup\nOnly one space after the !\nNo quotes around the original title",
+      "revId": "b75e3076a15ac0eca5a941d1308d4ec800cf0b59",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0e77f3dd_4947086b",
         "filename": "dist/Android.bp",
         "patchSetId": 2
