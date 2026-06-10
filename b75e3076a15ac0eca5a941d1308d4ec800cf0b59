@@ -33,6 +33,24 @@
       "message": "I think all you need is this, since the noicu libs are extra targets that we don\u0027t depend on?",
       "revId": "b75e3076a15ac0eca5a941d1308d4ec800cf0b59",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d925f84_f83ed0cf",
+        "filename": "dist/Android.bp",
+        "patchSetId": 2
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 17656
+      },
+      "writtenOn": "2026-06-10T10:12:40Z",
+      "side": 1,
+      "message": "Same as I did for 20.0 and 18.1, I simply made sure that all contents are taken over. So the branches lineage-18.1, lineage-19.1, lineage-20.0 and lineage-21.0 are identical",
+      "parentUuid": "0e77f3dd_4947086b",
+      "revId": "b75e3076a15ac0eca5a941d1308d4ec800cf0b59",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
