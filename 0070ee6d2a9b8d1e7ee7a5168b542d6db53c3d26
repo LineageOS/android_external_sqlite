@@ -16,6 +16,24 @@
       "message": "Should be a \"fixup!\" commit",
       "revId": "0070ee6d2a9b8d1e7ee7a5168b542d6db53c3d26",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4b14a74_6a17abdb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 17656
+      },
+      "writtenOn": "2026-06-10T09:36:18Z",
+      "side": 1,
+      "message": "like this?\n\nFixup! \"[BACKPORT] Update sqlite to 3.42.1\"",
+      "parentUuid": "95847730_e6ef7685",
+      "revId": "0070ee6d2a9b8d1e7ee7a5168b542d6db53c3d26",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
