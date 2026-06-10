@@ -33,6 +33,24 @@
       "message": "The Sqlite upgrade fixes a major vulnerability, and it also works in LineageOS 18.1 - it should NOT simply be reverted! \nInstead, the issue should be analysed, which I have started working on",
       "revId": "1991fe8ee7157e6fcb2062ca67d0789f09fe4d06",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7146b978_3f6bb771",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 11883
+      },
+      "writtenOn": "2026-06-10T08:08:42Z",
+      "side": 1,
+      "message": "Maybe https://cs.android.com/android/_/android/platform/packages/providers/MediaProvider/+/d7ad0a04a39a9ec7efcfce1c7df846d1486f9481",
+      "parentUuid": "08ff0b21_e78f29d8",
+      "revId": "1991fe8ee7157e6fcb2062ca67d0789f09fe4d06",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
