@@ -145,6 +145,7 @@ cc_library {
             exclude_static_libs: ["libsqlite3_android"],
         },
     },
+
     export_include_dirs: ["."],
 }
 
@@ -192,15 +193,5 @@ cc_library_static {
     defaults: ["sqlite-minimal-defaults"],
     srcs: ["sqlite3.c"],
     sdk_version: "23",
-    export_include_dirs: ["."],
-}
-
-cc_library_static {
-    name: "sqlite_ext_percentile",
-    srcs: [
-        "ext/misc/percentile.c",
-    ],
-    defaults: ["sqlite-defaults"],
-    host_supported: true,
     export_include_dirs: ["."],
 }

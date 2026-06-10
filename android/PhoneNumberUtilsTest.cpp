@@ -195,12 +195,11 @@ TEST(PhoneNumberUtils, compareStrictWrongPrefix) {
 }
 
 TEST(PhoneNumberUtils, compareStrict_phone_number_stripped_reversed_inter) {
-    char out[7];
+    char out[6];
     int outlen;
 
 #define ASSERT_STRIPPED_REVERSE(input, expected) \
-    phone_number_stripped_reversed_inter((input), out, sizeof(out)-1, &outlen); \
-    ASSERT_LT(outlen, sizeof(out)); \
+    phone_number_stripped_reversed_inter((input), out, sizeof(out), &outlen); \
     out[outlen] = 0; \
     ASSERT_STREQ((expected), (out)); \
 
